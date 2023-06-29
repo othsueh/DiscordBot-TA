@@ -25,6 +25,8 @@ module.exports = {
             }
         });
 
+        let playerCards = new Array();
+
         // // Old dice Program
         //建立 embed 和剪刀石頭布的三個 button
         const buttonEmbed = new EmbedBuilder().setColor("#5865F2").setTitle(`來猜拳！`);
