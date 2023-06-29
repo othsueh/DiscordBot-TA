@@ -43,7 +43,7 @@ client.once("ready", async (client) => {
     console.log(`${client.user.tag} 已上線！`);
 });
 
-client.login(process.env.TOKEN)
+client.login(process.env.TOKEN);
 observe(client)
     .start()
     .then((url) => console.log(`你可以在 ${url} 觀察 Bot 的狀態`));
@@ -60,6 +60,7 @@ function loadAllCommands(client, directory) {
     for (const file of commandFiles) {
         const command = require(`${directory}/${file}`);
         client.commands.set(command.data.name, command);
+        console.log(command.data.name);
         commands.push(command.data.toJSON());
     }
 
