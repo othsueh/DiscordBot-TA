@@ -7,6 +7,8 @@ const {
     Client,
 } = require("discord.js");
 const fs = require("node:fs");
+// import all function from function.js in the same folder
+const { shuffleArray } = require("./function.js");
 
 module.exports = {
     data: new SlashCommandBuilder().setName("blackjack").setDescription("Play blackjack! (21 點)"),
@@ -24,6 +26,10 @@ module.exports = {
                 cards.push(suits + i);
             }
         });
+
+        // shuffle cards 
+        shuffleArray(cards);
+        console.log(cards);
 
         // // Old dice Program
         //建立 embed 和剪刀石頭布的三個 button
