@@ -60,7 +60,6 @@ function loadAllCommands(client, directory) {
     for (const file of commandFiles) {
         const command = require(`${directory}/${file}`);
         client.commands.set(command.data.name, command);
-        console.log(command.data.name);
         commands.push(command.data.toJSON());
     }
 
