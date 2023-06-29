@@ -24,6 +24,10 @@ module.exports = {
             .setCustomId("deny")
             .setLabel("不要了")
             .setStyle(ButtonStyle.Primary);
+        const seeResult = new ButtonBuilder()
+            .setCustomId("result")
+            .setLabel("看結果")
+            .setStyle(ButtonStyle.Primary);
 
         const buttonRow = new ActionRowBuilder().addComponents(moreEmbed, denyEmbed);
         const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
@@ -62,27 +66,35 @@ module.exports = {
         hitCard(cards, userCards, 2);
         hitCard(cards, computerCards, 2);
 
+        let allStr = "你現在有";
+        const askStr = ", 還要繼續要牌嗎？";
+        userCards.forEach((card) => {
+            allStr += " " + card;
+        });
+        let buttonEmbed = new EmbedBuilder()
+            .setColor("#00ffff")
+            .setTitle(`決戰21點`)
+            .setDescription(allStr);
+        if (cardCalc(userCards, true) === 21) {
+            await interaction.reply({ embeds: [buttonEmbed], components: [seeResult] });
+        } else {
+            allStr += askStr;
+            buttonEmbed.setDescription(allStr);
+            await interaction.reply({ embeds: [buttonEmbed], components: [buttonRow] });
+        }
+
         //topic : 玩家補牌
         let ask = true;
         let userScore = 0;
         let userBomb = false;
-        const askStr = ", 還要繼續要牌嗎？";
         collector.on("collect", async (collected) => {
             ask = collected.customId === "more";
+            let buttonEmbed = new EmbedBuilder().setColor("#ffffff").setTitle(`決戰21點`);
+            if (seeResult) userScore = 21;
             if (ask) {
-                let allStr = "你現在有";
-                userCards.forEach((card) => {
-                    allStr += " " + card;
-                });
-                allStr += askStr;
-                const buttonEmbed = new EmbedBuilder()
-                    .setColor("#ffffff")
-                    .setTitle(`決戰21點`)
-                    .setDescription(allStr);
-                // await interaction.editReply({ embeds: [buttonEmbed], components: [buttonRow] });
                 const newCard = hitCard(cards, userCards);
                 buttonEmbed.setDescription(`你抽到了 ${newCard}`);
-                userScore = cardCalc(userCards);
+                userScore = judgeContainedCase(userCards);
                 if (userScore > 21) {
                     userBomb = true;
                 } else if (userScore === 21) {
@@ -91,17 +103,19 @@ module.exports = {
                     await collected.reply({ embeds: [buttonEmbed], components: [buttonRow] });
                     return;
                 }
+            } else {
+                userScore = judgeContainedCase(userCards);
             }
 
             //topic : 電腦補牌
-            let computerScore = cardCalc(computerCards);
+            let computerScore = judgeContainedCase(computerCards);
             while (computerScore < 17) {
                 hitCard(cards, computerCards);
-                computerScore = cardCalc(computerCards);
+                computerScore = judgeContainedCase(computerCards);
             }
 
             //topic : 判斷輸贏
-            let buttonEmbed = new EmbedBuilder().setColor("#ffffff").setTitle(`決戰21點`);
+            buttonEmbed = new EmbedBuilder().setColor("#ffffff").setTitle(`決戰21點`);
             if (userBomb)
                 embedReply(
                     `你爆牌了！ (${userCards.join(", ")})`,
@@ -118,6 +132,7 @@ module.exports = {
                         "https://media.giphy.com/media/iUtU5au1bfb5N7XGdh/giphy.gif",
                     );
                 else {
+                    console.log(userScore, computerScore);
                     if (userScore > computerScore)
                         embedReply(
                             `你贏了！ Computer :${computerCards.join(", ")}`,
@@ -145,25 +160,33 @@ module.exports = {
             }
             collector.stop();
         });
-        let allStr = "你現在有";
-        userCards.forEach((card) => {
-            allStr += " " + card;
-        });
-        allStr += askStr;
-        const buttonEmbed = new EmbedBuilder()
-            .setColor("#5865F2")
-            .setTitle(`決戰21點`)
-            .setDescription(allStr);
-        await interaction.reply({ embeds: [buttonEmbed], components: [buttonRow] });
     },
 };
-function cardCalc(cards) {
+function judgeContainedCase(cards) {
+    if (containedA(cards)) {
+        const [case1, case2] = [cardCalc(cards, true), cardCalc(cards)];
+        if (case1 > 21) return case2;
+        else return case1;
+    } else return cardCalc(cards);
+}
+function containedA(cards) {
+    let contain = false;
+    cards.forEach((card) => {
+        const unit = card.slice(1);
+        if (unit === "A") {
+            contain = true;
+        }
+    });
+    return contain;
+}
+function cardCalc(cards, AIsEle = false) {
     let score = 0;
     cards.forEach((card) => {
         const unit = card.slice(1);
         switch (unit) {
             case "A":
-                score += 1;
+                if (AIsEle) score += 11;
+                else score += 1;
                 break;
             case "J":
             case "Q":
